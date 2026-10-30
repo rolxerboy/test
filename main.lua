@@ -1,114 +1,131 @@
 
 local Library = {}
 
--- OEO LIB | LIQUID CHROME
--- Executor UI Library
-
-local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
-local Colors = {
+--==================================================
+-- OEO LIB CONFIGURATION
+--==================================================
+
+local C = {
     Black = Color3.fromRGB(5, 5, 7),
-    Dark = Color3.fromRGB(15, 15, 18),
-    Panel = Color3.fromRGB(24, 24, 27),
-    Silver = Color3.fromRGB(205, 210, 218),
+    Background = Color3.fromRGB(12, 12, 15),
+    Surface = Color3.fromRGB(25, 26, 30),
+    Surface2 = Color3.fromRGB(38, 39, 44),
     White = Color3.fromRGB(255, 255, 255),
-    Gray = Color3.fromRGB(110, 112, 120),
+    Silver = Color3.fromRGB(205, 210, 220),
+    Gray = Color3.fromRGB(115, 118, 125),
+    Text = Color3.fromRGB(245, 245, 250),
     Muted = Color3.fromRGB(145, 148, 155)
 }
 
 local Chrome = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 18)),
-    ColorSequenceKeypoint.new(0.13, Color3.fromRGB(235, 238, 245)),
-    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(75, 78, 85)),
-    ColorSequenceKeypoint.new(0.39, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.53, Color3.fromRGB(65, 67, 74)),
-    ColorSequenceKeypoint.new(0.68, Color3.fromRGB(230, 233, 240)),
-    ColorSequenceKeypoint.new(0.82, Color3.fromRGB(90, 92, 100)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 245, 250))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 36, 40)),
+    ColorSequenceKeypoint.new(0.16, Color3.fromRGB(245, 247, 250)),
+    ColorSequenceKeypoint.new(0.30, Color3.fromRGB(100, 103, 110)),
+    ColorSequenceKeypoint.new(0.48, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.63, Color3.fromRGB(85, 87, 94)),
+    ColorSequenceKeypoint.new(0.80, Color3.fromRGB(220, 223, 230)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 46, 52))
 })
 
-local function New(class, properties)
-    local object = Instance.new(class)
+--==================================================
+-- UTILITIES
+--==================================================
 
-    for property, value in pairs(properties) do
-        object[property] = value
+local function New(class, props)
+    local obj = Instance.new(class)
+
+    for key, value in pairs(props) do
+        obj[key] = value
     end
 
-    return object
+    return obj
 end
 
-local function Corner(parent, radius)
+local function Round(parent, radius)
     return New("UICorner", {
-        CornerRadius = UDim.new(0, radius),
-        Parent = parent
-    })
-end
-
-local function Stroke(parent, color, thickness, transparency)
-    return New("UIStroke", {
         Parent = parent,
-        Color = color or Colors.Silver,
-        Thickness = thickness or 1,
-        Transparency = transparency or 0
+        CornerRadius = UDim.new(0, radius)
     })
 end
 
-local function Gradient(parent, rotation)
-    return New("UIGradient", {
-        Parent = parent,
-        Color = Chrome,
-        Rotation = rotation or 0
-    })
-end
-
-local function Tween(object, properties, duration)
+local function Animate(obj, props, duration)
     local tween = TweenService:Create(
-        object,
+        obj,
         TweenInfo.new(
-            duration or 0.2,
-            Enum.EasingStyle.Quart,
+            duration or 0.22,
+            Enum.EasingStyle.Quint,
             Enum.EasingDirection.Out
         ),
-        properties
+        props
     )
 
     tween:Play()
     return tween
 end
 
-local function CreateChromeFrame(parent, size, position, radius)
+local function ChromeStroke(parent, thickness)
+    local stroke = New("UIStroke", {
+        Parent = parent,
+        Thickness = thickness or 1.3,
+        Color = C.Silver,
+        Transparency = 0.12,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    })
+
+    New("UIGradient", {
+        Parent = stroke,
+        Color = Chrome,
+        Rotation = 45
+    })
+
+    return stroke
+end
+
+local function ChromeSurface(parent, radius, color)
     local frame = New("Frame", {
         Parent = parent,
-        Size = size,
-        Position = position,
-        BackgroundColor3 = Colors.Silver,
+        BackgroundColor3 = color or C.Surface,
         BorderSizePixel = 0
     })
 
-    Corner(frame, radius or 7)
-    Gradient(frame, 90)
-    Stroke(frame, Colors.White, 1, 0.25)
+    Round(frame, radius or 18)
+    ChromeStroke(frame, 1.3)
+
+    -- Dark metallic surface gradient
+    New("UIGradient", {
+        Parent = frame,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 49, 55)),
+            ColorSequenceKeypoint.new(0.35, Color3.fromRGB(19, 20, 24)),
+            ColorSequenceKeypoint.new(0.75, Color3.fromRGB(33, 34, 39)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 15))
+        }),
+        Rotation = 90
+    })
 
     return frame
 end
 
-local function CreateText(parent, text, size, position)
-    local label = New("TextLabel", {
+local function Text(parent, value, size, position, width)
+    return New("TextLabel", {
         Parent = parent,
         BackgroundTransparency = 1,
-        Position = position or UDim2.new(0, 12, 0, 0),
-        Size = UDim2.new(1, -24, 1, 0),
-        Font = Enum.Font.Gotham,
-        Text = text or "",
-        TextColor3 = Colors.White,
-        TextSize = size or 13,
+        Position = position or UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(1, -(width or 30), 1, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = tostring(value or ""),
+        TextColor3 = C.Text,
+        TextSize = size or 12,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-
-    return label
 end
+
+--==================================================
+-- WINDOW
+--==================================================
 
 function Library:CreateWindow(options)
     options = options or {}
@@ -139,24 +156,22 @@ function Library:CreateWindow(options)
     local Main = New("Frame", {
         Name = "Main",
         Parent = GUI,
-        BackgroundColor3 = Colors.Black,
+        BackgroundColor3 = C.Black,
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, -280, 0.5, -190),
         Size = UDim2.new(0, 560, 0, 380),
         ClipsDescendants = true
     })
 
-    Corner(Main, 12)
-    Stroke(Main, Colors.Silver, 1.5, 0.1)
+    Round(Main, 23)
+    ChromeStroke(Main, 2)
 
-    -- WINDOW BACKGROUND
-
-    local BackgroundGradient = New("UIGradient", {
+    New("UIGradient", {
         Parent = Main,
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 5, 7)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(28, 28, 33)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 7))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 27, 32)),
+            ColorSequenceKeypoint.new(0.5, C.Black),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 29, 34))
         }),
         Rotation = 45
     })
@@ -164,69 +179,45 @@ function Library:CreateWindow(options)
     -- HEADER
 
     local Header = New("Frame", {
-        Name = "Header",
         Parent = Main,
-        BackgroundColor3 = Colors.Dark,
+        BackgroundColor3 = C.Background,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 48)
+        Size = UDim2.new(1, 0, 0, 55)
     })
-
-    local HeaderLine = New("Frame", {
-        Parent = Header,
-        BackgroundColor3 = Colors.Silver,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 1, -1),
-        Size = UDim2.new(1, 0, 0, 1)
-    })
-
-    Gradient(HeaderLine, 0)
-
-    -- LOGO
 
     local Logo = New("TextLabel", {
-        Name = "Logo",
         Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 17, 0, 0),
-        Size = UDim2.new(0, 150, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(1, -85, 1, 0),
         Font = Enum.Font.GothamBlack,
-        Text = "OEO Lib",
-        TextColor3 = Colors.White,
-        TextSize = 25,
+        Text = options.Name or "OEO Lib",
+        TextColor3 = C.White,
+        TextSize = 23,
         TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    Gradient(Logo, 0)
-
-    local Subtitle = New("TextLabel", {
-        Parent = Header,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 155, 0, 3),
-        Size = UDim2.new(0, 180, 1, 0),
-        Font = Enum.Font.Gotham,
-        Text = "LIQUID CHROME",
-        TextColor3 = Colors.Muted,
-        TextSize = 9,
-        TextXAlignment = Enum.TextXAlignment.Left
+    New("UIGradient", {
+        Parent = Logo,
+        Color = Chrome,
+        Rotation = 0
     })
-
-    -- CLOSE BUTTON
 
     local Close = New("TextButton", {
         Parent = Header,
-        BackgroundColor3 = Colors.Panel,
+        BackgroundColor3 = C.Surface2,
+        Position = UDim2.new(1, -43, 0, 12),
+        Size = UDim2.new(0, 29, 0, 29),
         BorderSizePixel = 0,
-        Position = UDim2.new(1, -39, 0, 11),
-        Size = UDim2.new(0, 27, 0, 27),
         Font = Enum.Font.GothamBold,
         Text = "×",
-        TextColor3 = Colors.White,
-        TextSize = 20,
+        TextColor3 = C.White,
+        TextSize = 21,
         AutoButtonColor = false
     })
 
-    Corner(Close, 6)
-    Stroke(Close, Colors.Silver, 1, 0.45)
+    Round(Close, 15)
+    ChromeStroke(Close, 1)
 
     Close.MouseButton1Click:Connect(function()
         GUI:Destroy()
@@ -241,7 +232,6 @@ function Library:CreateWindow(options)
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-
             dragging = true
             dragStart = input.Position
             startPosition = Main.Position
@@ -253,7 +243,6 @@ function Library:CreateWindow(options)
             input.UserInputType == Enum.UserInputType.MouseMovement
             or input.UserInputType == Enum.UserInputType.Touch
         ) then
-
             local delta = input.Position - dragStart
 
             Main.Position = UDim2.new(
@@ -275,55 +264,44 @@ function Library:CreateWindow(options)
     -- SIDEBAR
 
     local Sidebar = New("Frame", {
-        Name = "Sidebar",
         Parent = Main,
-        BackgroundColor3 = Colors.Dark,
+        BackgroundColor3 = C.Background,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 49),
-        Size = UDim2.new(0, 135, 1, -49)
+        Position = UDim2.new(0, 0, 0, 55),
+        Size = UDim2.new(0, 140, 1, -55)
     })
-
-    local SidebarLine = New("Frame", {
-        Parent = Sidebar,
-        BackgroundColor3 = Colors.Silver,
-        BorderSizePixel = 0,
-        Position = UDim2.new(1, -1, 0, 0),
-        Size = UDim2.new(0, 1, 1, 0)
-    })
-
-    Gradient(SidebarLine, 90)
 
     local TabContainer = New("ScrollingFrame", {
-        Name = "TabContainer",
         Parent = Sidebar,
         BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 14),
+        Size = UDim2.new(1, -20, 1, -25),
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 9, 0, 13),
-        Size = UDim2.new(1, -18, 1, -25),
         ScrollBarThickness = 2,
-        ScrollBarImageColor3 = Colors.Silver,
+        ScrollBarImageColor3 = C.Silver,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.new(0, 0, 0, 0)
     })
 
     New("UIListLayout", {
         Parent = TabContainer,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 7)
+        Padding = UDim.new(0, 9),
+        SortOrder = Enum.SortOrder.LayoutOrder
     })
 
-    -- PAGE CONTAINER
+    -- PAGE AREA
 
     local Pages = New("Frame", {
-        Name = "Pages",
         Parent = Main,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 146, 0, 60),
-        Size = UDim2.new(1, -157, 1, -72),
+        Position = UDim2.new(0, 150, 0, 65),
+        Size = UDim2.new(1, -162, 1, -78),
         ClipsDescendants = true
     })
 
+    --==================================================
     -- TAB SYSTEM
+    --==================================================
 
     local Tabs = {}
     local TabCount = 0
@@ -332,62 +310,58 @@ function Library:CreateWindow(options)
         for _, tab in ipairs(Tabs) do
             tab.Page.Visible = false
 
-            Tween(tab.Button, {
-                BackgroundColor3 = Colors.Panel
+            Animate(tab.Button, {
+                BackgroundColor3 = C.Surface
             })
 
-            Tween(tab.Label, {
-                TextColor3 = Colors.Muted
+            Animate(tab.Label, {
+                TextColor3 = C.Muted
             })
 
-            tab.ButtonStroke.Transparency = 0.65
+            tab.Stroke.Transparency = 0.55
         end
 
         selected.Page.Visible = true
 
-        Tween(selected.Button, {
-            BackgroundColor3 = Color3.fromRGB(90, 92, 100)
+        Animate(selected.Button, {
+            BackgroundColor3 = Color3.fromRGB(80, 82, 90)
         })
 
-        Tween(selected.Label, {
-            TextColor3 = Colors.White
+        Animate(selected.Label, {
+            TextColor3 = C.White
         })
 
-        selected.ButtonStroke.Transparency = 0.05
+        selected.Stroke.Transparency = 0.05
     end
-
-    -- TAB CREATION
 
     function Tabs:CreateTab(name)
         name = name or "New Tab"
-        TabCount = TabCount + 1
+        TabCount += 1
+
+        -- PILL TAB BUTTON
 
         local Button = New("TextButton", {
             Parent = TabContainer,
             Name = name .. "_Tab",
-            BackgroundColor3 = Colors.Panel,
+            BackgroundColor3 = C.Surface,
             BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 34),
+            Size = UDim2.new(1, 0, 0, 37),
             Text = "",
             AutoButtonColor = false,
             LayoutOrder = TabCount
         })
 
-        Corner(Button, 6)
+        Round(Button, 19)
 
-        local ButtonStroke = Stroke(Button, Colors.Silver, 1, 0.65)
+        local ButtonStroke = ChromeStroke(Button, 1)
 
-        local Label = New("TextLabel", {
-            Parent = Button,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0, 0),
-            Size = UDim2.new(1, -20, 1, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = name,
-            TextColor3 = Colors.Muted,
-            TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
+        local Label = Text(
+            Button,
+            name,
+            12,
+            UDim2.new(0, 15, 0, 0),
+            25
+        )
 
         local Page = New("ScrollingFrame", {
             Parent = Pages,
@@ -396,30 +370,30 @@ function Library:CreateWindow(options)
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 1, 0),
             ScrollBarThickness = 3,
-            ScrollBarImageColor3 = Colors.Silver,
-            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarImageColor3 = C.Silver,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            CanvasSize = UDim2.new(0, 0, 0, 0),
             Visible = false
         })
 
         New("UIListLayout", {
             Parent = Page,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 9)
+            Padding = UDim.new(0, 10),
+            SortOrder = Enum.SortOrder.LayoutOrder
         })
 
         New("UIPadding", {
             Parent = Page,
-            PaddingTop = UDim.new(0, 5),
-            PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 4),
-            PaddingRight = UDim.new(0, 7)
+            PaddingTop = UDim.new(0, 6),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 5),
+            PaddingRight = UDim.new(0, 8)
         })
 
         local Tab = {
             Button = Button,
-            ButtonStroke = ButtonStroke,
             Label = Label,
+            Stroke = ButtonStroke,
             Page = Page
         }
 
@@ -430,49 +404,51 @@ function Library:CreateWindow(options)
         end)
 
         Button.MouseEnter:Connect(function()
-            if Page.Visible then return end
-
-            Tween(Button, {
-                BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-            })
+            if not Page.Visible then
+                Animate(Button, {
+                    BackgroundColor3 = C.Surface2
+                })
+            end
         end)
 
         Button.MouseLeave:Connect(function()
-            if Page.Visible then return end
-
-            Tween(Button, {
-                BackgroundColor3 = Colors.Panel
-            })
+            if not Page.Visible then
+                Animate(Button, {
+                    BackgroundColor3 = C.Surface
+                })
+            end
         end)
 
         if #Tabs == 1 then
             SelectTab(Tab)
         end
 
-        -- ELEMENT CREATOR
+        --==================================================
+        -- ELEMENT HELPERS
+        --==================================================
 
         local function Element(height)
-            local frame = New("Frame", {
-                Parent = Page,
-                BackgroundColor3 = Colors.Panel,
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, height)
-            })
+            local frame = ChromeSurface(
+                Page,
+                18,
+                C.Surface
+            )
 
-            Corner(frame, 7)
-            Stroke(frame, Colors.Silver, 1, 0.8)
+            frame.Size = UDim2.new(1, 0, 0, height)
 
             return frame
         end
 
+        --==================================================
         -- BUTTON
+        --==================================================
 
         function Tab:CreateButton(options)
             options = options or {}
 
-            local frame = Element(38)
+            local frame = Element(43)
 
-            local label = CreateText(
+            Text(
                 frame,
                 options.Name or "Button",
                 12
@@ -486,14 +462,14 @@ function Library:CreateWindow(options)
             })
 
             click.MouseButton1Click:Connect(function()
-                Tween(frame, {
-                    BackgroundColor3 = Color3.fromRGB(95, 97, 105)
-                })
+                Animate(frame, {
+                    BackgroundColor3 = C.Silver
+                }, 0.12)
 
-                task.delay(0.2, function()
+                task.delay(0.15, function()
                     if frame.Parent then
-                        Tween(frame, {
-                            BackgroundColor3 = Colors.Panel
+                        Animate(frame, {
+                            BackgroundColor3 = C.Surface
                         })
                     end
                 end)
@@ -503,56 +479,48 @@ function Library:CreateWindow(options)
                 end
             end)
 
-            click.MouseEnter:Connect(function()
-                Tween(frame, {
-                    BackgroundColor3 = Color3.fromRGB(48, 48, 53)
-                })
-            end)
-
-            click.MouseLeave:Connect(function()
-                Tween(frame, {
-                    BackgroundColor3 = Colors.Panel
-                })
-            end)
-
             return frame
         end
 
+        --==================================================
         -- TOGGLE
+        --==================================================
 
         function Tab:CreateToggle(options)
             options = options or {}
 
             local state = options.Default == true
 
-            local frame = Element(38)
+            local frame = Element(43)
 
-            CreateText(
+            Text(
                 frame,
                 options.Name or "Toggle",
                 12
             )
 
-            local indicator = New("Frame", {
+            local switch = New("Frame", {
                 Parent = frame,
-                BackgroundColor3 = state and Colors.Silver or Colors.Gray,
+                BackgroundColor3 = state and C.Silver or C.Gray,
                 BorderSizePixel = 0,
-                Position = UDim2.new(1, -43, 0.5, -9),
-                Size = UDim2.new(0, 31, 0, 18)
+                Position = UDim2.new(1, -48, 0.5, -10),
+                Size = UDim2.new(0, 37, 0, 20)
             })
 
-            Corner(indicator, 10)
+            Round(switch, 15)
 
-            local circle = New("Frame", {
-                Parent = indicator,
-                BackgroundColor3 = Colors.White,
+            local knob = New("Frame", {
+                Parent = switch,
+                BackgroundColor3 = C.White,
                 BorderSizePixel = 0,
-                Position = state and UDim2.new(1, -16, 0, 2)
+                Position = state
+                    and UDim2.new(1, -18, 0, 2)
                     or UDim2.new(0, 2, 0, 2),
-                Size = UDim2.new(0, 14, 0, 14)
+                Size = UDim2.new(0, 16, 0, 16)
             })
 
-            Corner(circle, 10)
+            Round(knob, 15)
+            ChromeStroke(knob, 0.6)
 
             local click = New("TextButton", {
                 Parent = frame,
@@ -562,13 +530,13 @@ function Library:CreateWindow(options)
             })
 
             local function Update()
-                Tween(indicator, {
-                    BackgroundColor3 = state and Colors.Silver or Colors.Gray
+                Animate(switch, {
+                    BackgroundColor3 = state and C.Silver or C.Gray
                 })
 
-                Tween(circle, {
+                Animate(knob, {
                     Position = state
-                        and UDim2.new(1, -16, 0, 2)
+                        and UDim2.new(1, -18, 0, 2)
                         or UDim2.new(0, 2, 0, 2)
                 })
 
@@ -596,7 +564,9 @@ function Library:CreateWindow(options)
             return object
         end
 
+        --==================================================
         -- SLIDER
+        --==================================================
 
         function Tab:CreateSlider(options)
             options = options or {}
@@ -604,7 +574,7 @@ function Library:CreateWindow(options)
             local minimum = options.Min or 0
             local maximum = options.Max or 100
 
-            assert(maximum > minimum, "Slider Max must be greater than Min")
+            assert(maximum > minimum, "Invalid slider range")
 
             local value = math.clamp(
                 options.Default or minimum,
@@ -612,42 +582,42 @@ function Library:CreateWindow(options)
                 maximum
             )
 
-            local frame = Element(55)
+            local frame = Element(62)
 
-            local title = CreateText(
+            local title = Text(
                 frame,
                 options.Name or "Slider",
                 12,
-                UDim2.new(0, 10, 0, 0)
+                UDim2.new(0, 14, 0, 0),
+                75
             )
 
-            title.Size = UDim2.new(1, -75, 0, 25)
+            title.Size = UDim2.new(1, -85, 0, 30)
 
-            local valueLabel = New("TextLabel", {
+            local valueText = New("TextLabel", {
                 Parent = frame,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(1, -65, 0, 0),
-                Size = UDim2.new(0, 55, 0, 25),
-                Font = Enum.Font.Gotham,
+                Size = UDim2.new(0, 50, 0, 30),
+                Font = Enum.Font.GothamMedium,
                 Text = tostring(value),
-                TextColor3 = Colors.Silver,
-                TextSize = 11,
-                TextXAlignment = Enum.TextXAlignment.Right
+                TextColor3 = C.Silver,
+                TextSize = 11
             })
 
             local bar = New("Frame", {
                 Parent = frame,
-                BackgroundColor3 = Colors.Gray,
+                BackgroundColor3 = C.Gray,
                 BorderSizePixel = 0,
-                Position = UDim2.new(0, 10, 0, 35),
-                Size = UDim2.new(1, -20, 0, 5)
+                Position = UDim2.new(0, 14, 0, 40),
+                Size = UDim2.new(1, -28, 0, 6)
             })
 
-            Corner(bar, 5)
+            Round(bar, 10)
 
             local fill = New("Frame", {
                 Parent = bar,
-                BackgroundColor3 = Colors.Silver,
+                BackgroundColor3 = C.Silver,
                 BorderSizePixel = 0,
                 Size = UDim2.new(
                     (value - minimum) / (maximum - minimum),
@@ -655,8 +625,27 @@ function Library:CreateWindow(options)
                 )
             })
 
-            Corner(fill, 5)
-            Gradient(fill, 0)
+            Round(fill, 10)
+            New("UIGradient", {
+                Parent = fill,
+                Color = Chrome,
+                Rotation = 0
+            })
+
+            local knob = New("Frame", {
+                Parent = bar,
+                BackgroundColor3 = C.White,
+                BorderSizePixel = 0,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.new(
+                    (value - minimum) / (maximum - minimum),
+                    0, 0.5, 0
+                ),
+                Size = UDim2.new(0, 14, 0, 14)
+            })
+
+            Round(knob, 10)
+            ChromeStroke(knob, 0.7)
 
             local draggingSlider = false
 
@@ -669,11 +658,15 @@ function Library:CreateWindow(options)
 
                 local percent = (value - minimum) / (maximum - minimum)
 
-                Tween(fill, {
+                Animate(fill, {
                     Size = UDim2.new(percent, 0, 1, 0)
                 })
 
-                valueLabel.Text = tostring(value)
+                Animate(knob, {
+                    Position = UDim2.new(percent, 0, 0.5, 0)
+                })
+
+                valueText.Text = tostring(value)
 
                 if options.Callback then
                     task.spawn(options.Callback, value)
@@ -688,7 +681,7 @@ function Library:CreateWindow(options)
                     1
                 )
 
-                SetValue(minimum + (maximum - minimum) * percent)
+                SetValue(minimum + percent * (maximum - minimum))
             end
 
             local click = New("TextButton", {
@@ -700,6 +693,7 @@ function Library:CreateWindow(options)
 
             click.MouseButton1Down:Connect(function()
                 draggingSlider = true
+
                 Update({
                     Position = UserInputService:GetMouseLocation()
                 })
@@ -734,47 +728,59 @@ function Library:CreateWindow(options)
             return object
         end
 
+        --==================================================
         -- LABEL
+        --==================================================
 
-        function Tab:CreateLabel(text)
-            local frame = Element(32)
+        function Tab:CreateLabel(value)
+            local frame = Element(37)
 
-            local label = CreateText(
+            local label = Text(
                 frame,
-                text or "Label",
+                value or "Label",
                 12
             )
 
             local object = {}
 
-            function object:Set(newText)
-                label.Text = tostring(newText)
+            function object:Set(newValue)
+                label.Text = tostring(newValue)
             end
 
             return object
         end
 
+        --==================================================
         -- SECTION
+        --==================================================
 
-        function Tab:CreateSection(text)
-            local section = New("TextLabel", {
+        function Tab:CreateSection(value)
+            local frame = New("Frame", {
                 Parent = Page,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 25),
+                Size = UDim2.new(1, 0, 0, 27)
+            })
+
+            local label = New("TextLabel", {
+                Parent = frame,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
                 Font = Enum.Font.GothamBold,
-                Text = string.upper(text or "SECTION"),
-                TextColor3 = Colors.Silver,
-                TextSize = 12,
+                Text = string.upper(value or "SECTION"),
+                TextColor3 = C.Silver,
+                TextSize = 11,
                 TextXAlignment = Enum.TextXAlignment.Left
             })
 
-            Gradient(section, 0)
-
-            return section
+            return label
         end
 
         return Tab
     end
+
+    --==================================================
+    -- WINDOW API
+    --==================================================
 
     local Window = {}
 
