@@ -109,14 +109,10 @@ local function ChromeSurface(parent, size, radius, zindex)
     -- Dark inner surface
 
     local face = New("Frame", {
-        Parent = shell,
-        BackgroundColor3 = C.Black,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 2, 0, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        ClipsDescendants = true,
-        ZIndex = (zindex or 1) + 1
-    })
+            Parent = shell,
+            BackgroundColor3 = C.Black,
+            BackgroundTransparency = 0.08,
+            BorderSizePixel = 0,
 
     Round(face, math.max(2, (radius or 18) - 2))
     Gradient(face, DarkMetal, 90)
@@ -225,7 +221,8 @@ function Library:CreateWindow(options)
         ClipsDescendants = true,
         ZIndex = 2
     })
-
+    
+    Main.BackgroundTransparency = 0.05
     Round(Main, 22)
     Gradient(Main, DarkMetal, 90)
 
