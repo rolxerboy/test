@@ -1,21 +1,33 @@
 
 local Library = {}
 
+-- OEO LIB | LIQUID CHROME
+-- Executor UI Library
+
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
 local Colors = {
-    Background = Color3.fromRGB(18, 18, 18),
-    Sidebar = Color3.fromRGB(34, 34, 34),
-    Page = Color3.fromRGB(34, 34, 34),
-    Button = Color3.fromRGB(115, 49, 37),
-    Active = Color3.fromRGB(255, 109, 83),
-    Text = Color3.fromRGB(255, 255, 255),
-    Muted = Color3.fromRGB(160, 160, 160),
-    Element = Color3.fromRGB(45, 45, 45),
-    Bar = Color3.fromRGB(65, 65, 65)
+    Black = Color3.fromRGB(5, 5, 7),
+    Dark = Color3.fromRGB(15, 15, 18),
+    Panel = Color3.fromRGB(24, 24, 27),
+    Silver = Color3.fromRGB(205, 210, 218),
+    White = Color3.fromRGB(255, 255, 255),
+    Gray = Color3.fromRGB(110, 112, 120),
+    Muted = Color3.fromRGB(145, 148, 155)
 }
+
+local Chrome = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 18)),
+    ColorSequenceKeypoint.new(0.13, Color3.fromRGB(235, 238, 245)),
+    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(75, 78, 85)),
+    ColorSequenceKeypoint.new(0.39, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.53, Color3.fromRGB(65, 67, 74)),
+    ColorSequenceKeypoint.new(0.68, Color3.fromRGB(230, 233, 240)),
+    ColorSequenceKeypoint.new(0.82, Color3.fromRGB(90, 92, 100)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 245, 250))
+})
 
 local function New(class, properties)
     local object = Instance.new(class)
@@ -34,10 +46,31 @@ local function Corner(parent, radius)
     })
 end
 
-local function Tween(object, properties)
+local function Stroke(parent, color, thickness, transparency)
+    return New("UIStroke", {
+        Parent = parent,
+        Color = color or Colors.Silver,
+        Thickness = thickness or 1,
+        Transparency = transparency or 0
+    })
+end
+
+local function Gradient(parent, rotation)
+    return New("UIGradient", {
+        Parent = parent,
+        Color = Chrome,
+        Rotation = rotation or 0
+    })
+end
+
+local function Tween(object, properties, duration)
     local tween = TweenService:Create(
         object,
-        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        TweenInfo.new(
+            duration or 0.2,
+            Enum.EasingStyle.Quart,
+            Enum.EasingDirection.Out
+        ),
         properties
     )
 
@@ -45,91 +78,173 @@ local function Tween(object, properties)
     return tween
 end
 
-function Library:CreateWindow()
+local function CreateChromeFrame(parent, size, position, radius)
+    local frame = New("Frame", {
+        Parent = parent,
+        Size = size,
+        Position = position,
+        BackgroundColor3 = Colors.Silver,
+        BorderSizePixel = 0
+    })
+
+    Corner(frame, radius or 7)
+    Gradient(frame, 90)
+    Stroke(frame, Colors.White, 1, 0.25)
+
+    return frame
+end
+
+local function CreateText(parent, text, size, position)
+    local label = New("TextLabel", {
+        Parent = parent,
+        BackgroundTransparency = 1,
+        Position = position or UDim2.new(0, 12, 0, 0),
+        Size = UDim2.new(1, -24, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = text or "",
+        TextColor3 = Colors.White,
+        TextSize = size or 13,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    return label
+end
+
+function Library:CreateWindow(options)
+    options = options or {}
+
     local GUI = New("ScreenGui", {
-        Name = "CustomExecutorLibrary",
+        Name = "OEO_Lib",
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     })
 
-    local success = pcall(function()
-        GUI.Parent = CoreGui
-    end)
+    local parent
 
-    if not success then
-        GUI:Destroy()
-        error("Unable to parent GUI to CoreGui")
+    if typeof(gethui) == "function" then
+        local success, result = pcall(gethui)
+        if success then
+            parent = result
+        end
     end
 
-    local FRAME = New("Frame", {
-        Name = "FRAME",
+    if not parent then
+        parent = game:GetService("CoreGui")
+    end
+
+    GUI.Parent = parent
+
+    -- MAIN WINDOW
+
+    local Main = New("Frame", {
+        Name = "Main",
         Parent = GUI,
-        BackgroundColor3 = Colors.Background,
+        BackgroundColor3 = Colors.Black,
         BorderSizePixel = 0,
-        Position = UDim2.new(0.5, -215, 0.5, -130),
-        Size = UDim2.new(0, 430, 0, 260),
+        Position = UDim2.new(0.5, -280, 0.5, -190),
+        Size = UDim2.new(0, 560, 0, 380),
         ClipsDescendants = true
     })
 
-    Corner(FRAME, 9)
+    Corner(Main, 12)
+    Stroke(Main, Colors.Silver, 1.5, 0.1)
 
-    local SIDEBAR = New("Frame", {
-        Name = "SIDEBAR",
-        Parent = FRAME,
-        BackgroundColor3 = Colors.Sidebar,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 110, 1, 0)
+    -- WINDOW BACKGROUND
+
+    local BackgroundGradient = New("UIGradient", {
+        Parent = Main,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 5, 7)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(28, 28, 33)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 7))
+        }),
+        Rotation = 45
     })
 
-    Corner(SIDEBAR, 9)
+    -- HEADER
 
-    New("Frame", {
-        Parent = SIDEBAR,
-        BackgroundColor3 = Colors.Bar,
+    local Header = New("Frame", {
+        Name = "Header",
+        Parent = Main,
+        BackgroundColor3 = Colors.Dark,
         BorderSizePixel = 0,
-        Position = UDim2.new(1, -6, 0, 0),
-        Size = UDim2.new(0, 6, 1, 0)
+        Size = UDim2.new(1, 0, 0, 48)
     })
 
-    local TABS = New("Frame", {
-        Name = "TABS",
-        Parent = SIDEBAR,
+    local HeaderLine = New("Frame", {
+        Parent = Header,
+        BackgroundColor3 = Colors.Silver,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 1, -1),
+        Size = UDim2.new(1, 0, 0, 1)
+    })
+
+    Gradient(HeaderLine, 0)
+
+    -- LOGO
+
+    local Logo = New("TextLabel", {
+        Name = "Logo",
+        Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 6, 0, 8),
-        Size = UDim2.new(1, -18, 1, -16)
+        Position = UDim2.new(0, 17, 0, 0),
+        Size = UDim2.new(0, 150, 1, 0),
+        Font = Enum.Font.GothamBlack,
+        Text = "OEO Lib",
+        TextColor3 = Colors.White,
+        TextSize = 25,
+        TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    New("UIListLayout", {
-        Parent = TABS,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5)
+    Gradient(Logo, 0)
+
+    local Subtitle = New("TextLabel", {
+        Parent = Header,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 155, 0, 3),
+        Size = UDim2.new(0, 180, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = "LIQUID CHROME",
+        TextColor3 = Colors.Muted,
+        TextSize = 9,
+        TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    local PAGES = New("Frame", {
-        Name = "PAGES",
-        Parent = FRAME,
-        BackgroundColor3 = Colors.Page,
+    -- CLOSE BUTTON
+
+    local Close = New("TextButton", {
+        Parent = Header,
+        BackgroundColor3 = Colors.Panel,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 118, 0, 7),
-        Size = UDim2.new(1, -125, 1, -14),
-        ClipsDescendants = true
+        Position = UDim2.new(1, -39, 0, 11),
+        Size = UDim2.new(0, 27, 0, 27),
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextColor3 = Colors.White,
+        TextSize = 20,
+        AutoButtonColor = false
     })
 
-    Corner(PAGES, 5)
+    Corner(Close, 6)
+    Stroke(Close, Colors.Silver, 1, 0.45)
 
-    -- Window dragging
+    Close.MouseButton1Click:Connect(function()
+        GUI:Destroy()
+    end)
+
+    -- DRAGGING
 
     local dragging = false
     local dragStart
     local startPosition
 
-    FRAME.InputBegan:Connect(function(input)
+    Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
 
             dragging = true
             dragStart = input.Position
-            startPosition = FRAME.Position
+            startPosition = Main.Position
         end
     end)
 
@@ -141,7 +256,7 @@ function Library:CreateWindow()
 
             local delta = input.Position - dragStart
 
-            FRAME.Position = UDim2.new(
+            Main.Position = UDim2.new(
                 startPosition.X.Scale,
                 startPosition.X.Offset + delta.X,
                 startPosition.Y.Scale,
@@ -157,6 +272,59 @@ function Library:CreateWindow()
         end
     end)
 
+    -- SIDEBAR
+
+    local Sidebar = New("Frame", {
+        Name = "Sidebar",
+        Parent = Main,
+        BackgroundColor3 = Colors.Dark,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 49),
+        Size = UDim2.new(0, 135, 1, -49)
+    })
+
+    local SidebarLine = New("Frame", {
+        Parent = Sidebar,
+        BackgroundColor3 = Colors.Silver,
+        BorderSizePixel = 0,
+        Position = UDim2.new(1, -1, 0, 0),
+        Size = UDim2.new(0, 1, 1, 0)
+    })
+
+    Gradient(SidebarLine, 90)
+
+    local TabContainer = New("ScrollingFrame", {
+        Name = "TabContainer",
+        Parent = Sidebar,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 9, 0, 13),
+        Size = UDim2.new(1, -18, 1, -25),
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = Colors.Silver,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(0, 0, 0, 0)
+    })
+
+    New("UIListLayout", {
+        Parent = TabContainer,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 7)
+    })
+
+    -- PAGE CONTAINER
+
+    local Pages = New("Frame", {
+        Name = "Pages",
+        Parent = Main,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 146, 0, 60),
+        Size = UDim2.new(1, -157, 1, -72),
+        ClipsDescendants = true
+    })
+
+    -- TAB SYSTEM
+
     local Tabs = {}
     local TabCount = 0
 
@@ -165,101 +333,136 @@ function Library:CreateWindow()
             tab.Page.Visible = false
 
             Tween(tab.Button, {
-                BackgroundColor3 = Colors.Button
+                BackgroundColor3 = Colors.Panel
             })
+
+            Tween(tab.Label, {
+                TextColor3 = Colors.Muted
+            })
+
+            tab.ButtonStroke.Transparency = 0.65
         end
 
         selected.Page.Visible = true
 
         Tween(selected.Button, {
-            BackgroundColor3 = Colors.Active
+            BackgroundColor3 = Color3.fromRGB(90, 92, 100)
         })
+
+        Tween(selected.Label, {
+            TextColor3 = Colors.White
+        })
+
+        selected.ButtonStroke.Transparency = 0.05
     end
 
-    local function CreateElement(parent, height)
-        return New("Frame", {
-            Parent = parent,
-            BackgroundColor3 = Colors.Element,
-            BorderSizePixel = 0,
-            Size = UDim2.new(1, -4, 0, height)
-        })
-    end
+    -- TAB CREATION
 
-    local function CreateText(parent, text, size)
-        return New("TextLabel", {
-            Parent = parent,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, -16, 1, 0),
-            Position = UDim2.new(0, 8, 0, 0),
-            Font = Enum.Font.Gotham,
-            Text = text,
-            TextColor3 = Colors.Text,
-            TextSize = size or 13,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-    end
-
-    function Tabs:CreateTab(TabName)
-        TabName = TabName or "New Tab"
+    function Tabs:CreateTab(name)
+        name = name or "New Tab"
         TabCount = TabCount + 1
 
-        local TABBUTTON = New("TextButton", {
-            Name = "TABBUTTON",
-            Parent = TABS,
-            BackgroundColor3 = Colors.Button,
+        local Button = New("TextButton", {
+            Parent = TabContainer,
+            Name = name .. "_Tab",
+            BackgroundColor3 = Colors.Panel,
             BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 28),
-            Font = Enum.Font.Gotham,
-            Text = TabName,
-            TextColor3 = Colors.Text,
-            TextSize = 13,
-            LayoutOrder = TabCount,
-            AutoButtonColor = false
+            Size = UDim2.new(1, 0, 0, 34),
+            Text = "",
+            AutoButtonColor = false,
+            LayoutOrder = TabCount
         })
 
-        Corner(TABBUTTON, 5)
+        Corner(Button, 6)
 
-        local PAGE = New("ScrollingFrame", {
-            Name = TabName .. "_PAGE",
-            Parent = PAGES,
+        local ButtonStroke = Stroke(Button, Colors.Silver, 1, 0.65)
+
+        local Label = New("TextLabel", {
+            Parent = Button,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 10, 0, 0),
+            Size = UDim2.new(1, -20, 1, 0),
+            Font = Enum.Font.GothamMedium,
+            Text = name,
+            TextColor3 = Colors.Muted,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+
+        local Page = New("ScrollingFrame", {
+            Parent = Pages,
+            Name = name .. "_Page",
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 1, 0),
-            ScrollBarThickness = 4,
-            ScrollBarImageColor3 = Colors.Active,
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Colors.Silver,
             CanvasSize = UDim2.new(0, 0, 0, 0),
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             Visible = false
         })
 
         New("UIListLayout", {
-            Parent = PAGE,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            Parent = Page,
             SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 6)
+            Padding = UDim.new(0, 9)
         })
 
         New("UIPadding", {
-            Parent = PAGE,
-            PaddingTop = UDim.new(0, 6),
-            PaddingBottom = UDim.new(0, 6),
-            PaddingLeft = UDim.new(0, 5),
-            PaddingRight = UDim.new(0, 5)
+            Parent = Page,
+            PaddingTop = UDim.new(0, 5),
+            PaddingBottom = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 4),
+            PaddingRight = UDim.new(0, 7)
         })
 
         local Tab = {
-            Button = TABBUTTON,
-            Page = PAGE
+            Button = Button,
+            ButtonStroke = ButtonStroke,
+            Label = Label,
+            Page = Page
         }
 
         table.insert(Tabs, Tab)
 
-        TABBUTTON.MouseButton1Click:Connect(function()
+        Button.MouseButton1Click:Connect(function()
             SelectTab(Tab)
+        end)
+
+        Button.MouseEnter:Connect(function()
+            if Page.Visible then return end
+
+            Tween(Button, {
+                BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            })
+        end)
+
+        Button.MouseLeave:Connect(function()
+            if Page.Visible then return end
+
+            Tween(Button, {
+                BackgroundColor3 = Colors.Panel
+            })
         end)
 
         if #Tabs == 1 then
             SelectTab(Tab)
+        end
+
+        -- ELEMENT CREATOR
+
+        local function Element(height)
+            local frame = New("Frame", {
+                Parent = Page,
+                BackgroundColor3 = Colors.Panel,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, height)
+            })
+
+            Corner(frame, 7)
+            Stroke(frame, Colors.Silver, 1, 0.8)
+
+            return frame
         end
 
         -- BUTTON
@@ -267,31 +470,30 @@ function Library:CreateWindow()
         function Tab:CreateButton(options)
             options = options or {}
 
-            local button = CreateElement(PAGE, 32)
-            Corner(button, 5)
+            local frame = Element(38)
 
-            local text = CreateText(
-                button,
+            local label = CreateText(
+                frame,
                 options.Name or "Button",
-                13
+                12
             )
 
             local click = New("TextButton", {
-                Parent = button,
+                Parent = frame,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
                 Text = ""
             })
 
             click.MouseButton1Click:Connect(function()
-                Tween(button, {
-                    BackgroundColor3 = Colors.Active
+                Tween(frame, {
+                    BackgroundColor3 = Color3.fromRGB(95, 97, 105)
                 })
 
                 task.delay(0.2, function()
-                    if button.Parent then
-                        Tween(button, {
-                            BackgroundColor3 = Colors.Element
+                    if frame.Parent then
+                        Tween(frame, {
+                            BackgroundColor3 = Colors.Panel
                         })
                     end
                 end)
@@ -301,7 +503,19 @@ function Library:CreateWindow()
                 end
             end)
 
-            return button
+            click.MouseEnter:Connect(function()
+                Tween(frame, {
+                    BackgroundColor3 = Color3.fromRGB(48, 48, 53)
+                })
+            end)
+
+            click.MouseLeave:Connect(function()
+                Tween(frame, {
+                    BackgroundColor3 = Colors.Panel
+                })
+            end)
+
+            return frame
         end
 
         -- TOGGLE
@@ -309,35 +523,39 @@ function Library:CreateWindow()
         function Tab:CreateToggle(options)
             options = options or {}
 
-            local state = options.Default or false
+            local state = options.Default == true
 
-            local toggle = CreateElement(PAGE, 32)
-            Corner(toggle, 5)
+            local frame = Element(38)
 
-            CreateText(toggle, options.Name or "Toggle", 13)
+            CreateText(
+                frame,
+                options.Name or "Toggle",
+                12
+            )
 
             local indicator = New("Frame", {
-                Parent = toggle,
-                BackgroundColor3 = state and Colors.Active or Colors.Muted,
-                Position = UDim2.new(1, -35, 0.5, -8),
-                Size = UDim2.new(0, 25, 0, 16),
-                BorderSizePixel = 0
+                Parent = frame,
+                BackgroundColor3 = state and Colors.Silver or Colors.Gray,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -43, 0.5, -9),
+                Size = UDim2.new(0, 31, 0, 18)
             })
 
-            Corner(indicator, 8)
+            Corner(indicator, 10)
 
             local circle = New("Frame", {
                 Parent = indicator,
-                BackgroundColor3 = Colors.Text,
-                Position = state and UDim2.new(1, -13, 0, 2) or UDim2.new(0, 2, 0, 2),
-                Size = UDim2.new(0, 12, 0, 12),
-                BorderSizePixel = 0
+                BackgroundColor3 = Colors.White,
+                BorderSizePixel = 0,
+                Position = state and UDim2.new(1, -16, 0, 2)
+                    or UDim2.new(0, 2, 0, 2),
+                Size = UDim2.new(0, 14, 0, 14)
             })
 
-            Corner(circle, 8)
+            Corner(circle, 10)
 
             local click = New("TextButton", {
-                Parent = toggle,
+                Parent = frame,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
                 Text = ""
@@ -345,12 +563,12 @@ function Library:CreateWindow()
 
             local function Update()
                 Tween(indicator, {
-                    BackgroundColor3 = state and Colors.Active or Colors.Muted
+                    BackgroundColor3 = state and Colors.Silver or Colors.Gray
                 })
 
                 Tween(circle, {
                     Position = state
-                        and UDim2.new(1, -13, 0, 2)
+                        and UDim2.new(1, -16, 0, 2)
                         or UDim2.new(0, 2, 0, 2)
                 })
 
@@ -367,7 +585,7 @@ function Library:CreateWindow()
             local object = {}
 
             function object:Set(value)
-                state = not not value
+                state = value == true
                 Update()
             end
 
@@ -385,47 +603,51 @@ function Library:CreateWindow()
 
             local minimum = options.Min or 0
             local maximum = options.Max or 100
+
+            assert(maximum > minimum, "Slider Max must be greater than Min")
+
             local value = math.clamp(
                 options.Default or minimum,
                 minimum,
                 maximum
             )
 
-            local slider = CreateElement(PAGE, 52)
-            Corner(slider, 5)
+            local frame = Element(55)
 
             local title = CreateText(
-                slider,
+                frame,
                 options.Name or "Slider",
-                13
+                12,
+                UDim2.new(0, 10, 0, 0)
             )
 
-            title.Size = UDim2.new(1, -65, 0, 24)
+            title.Size = UDim2.new(1, -75, 0, 25)
 
             local valueLabel = New("TextLabel", {
-                Parent = slider,
+                Parent = frame,
                 BackgroundTransparency = 1,
-                Position = UDim2.new(1, -55, 0, 0),
-                Size = UDim2.new(0, 45, 0, 24),
+                Position = UDim2.new(1, -65, 0, 0),
+                Size = UDim2.new(0, 55, 0, 25),
                 Font = Enum.Font.Gotham,
-                TextColor3 = Colors.Text,
-                TextSize = 12,
-                Text = tostring(value)
+                Text = tostring(value),
+                TextColor3 = Colors.Silver,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Right
             })
 
             local bar = New("Frame", {
-                Parent = slider,
-                BackgroundColor3 = Colors.Bar,
+                Parent = frame,
+                BackgroundColor3 = Colors.Gray,
                 BorderSizePixel = 0,
-                Position = UDim2.new(0, 9, 0, 32),
-                Size = UDim2.new(1, -18, 0, 7)
+                Position = UDim2.new(0, 10, 0, 35),
+                Size = UDim2.new(1, -20, 0, 5)
             })
 
             Corner(bar, 5)
 
             local fill = New("Frame", {
                 Parent = bar,
-                BackgroundColor3 = Colors.Active,
+                BackgroundColor3 = Colors.Silver,
                 BorderSizePixel = 0,
                 Size = UDim2.new(
                     (value - minimum) / (maximum - minimum),
@@ -434,6 +656,7 @@ function Library:CreateWindow()
             })
 
             Corner(fill, 5)
+            Gradient(fill, 0)
 
             local draggingSlider = false
 
@@ -514,15 +737,18 @@ function Library:CreateWindow()
         -- LABEL
 
         function Tab:CreateLabel(text)
-            local label = CreateElement(PAGE, 28)
-            Corner(label, 5)
+            local frame = Element(32)
 
-            local textLabel = CreateText(label, text or "Label", 13)
+            local label = CreateText(
+                frame,
+                text or "Label",
+                12
+            )
 
             local object = {}
 
             function object:Set(newText)
-                textLabel.Text = tostring(newText)
+                label.Text = tostring(newText)
             end
 
             return object
@@ -532,15 +758,17 @@ function Library:CreateWindow()
 
         function Tab:CreateSection(text)
             local section = New("TextLabel", {
-                Parent = PAGE,
+                Parent = Page,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, -4, 0, 25),
+                Size = UDim2.new(1, 0, 0, 25),
                 Font = Enum.Font.GothamBold,
-                Text = text or "Section",
-                TextColor3 = Colors.Active,
-                TextSize = 13,
+                Text = string.upper(text or "SECTION"),
+                TextColor3 = Colors.Silver,
+                TextSize = 12,
                 TextXAlignment = Enum.TextXAlignment.Left
             })
+
+            Gradient(section, 0)
 
             return section
         end
@@ -550,9 +778,9 @@ function Library:CreateWindow()
 
     local Window = {}
 
-    Window.Tabs = Tabs
     Window.GUI = GUI
-    Window.Frame = FRAME
+    Window.Frame = Main
+    Window.Tabs = Tabs
 
     function Window:CreateTab(name)
         return Tabs:CreateTab(name)
