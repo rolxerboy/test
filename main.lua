@@ -123,15 +123,21 @@ local function ChromeSurface(parent, size, radius, zindex)
 
     -- Upper metallic reflection
 
-    local highlight = New("Frame", {
-        Parent = face,
-        BackgroundColor3 = C.White,
-        BackgroundTransparency = 0.45,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 15, 0, 0),
-        Size = UDim2.new(0.55, 0, 0, 1),
-        ZIndex = (zindex or 1) + 2
-    })
+    -- Upper metallic reflection (disabled on small surfaces)
+    
+    if (size.X.Offset or 0) > 100 then
+        local highlight = New("Frame", {
+                Parent = face,
+                BackgroundColor3 = C.White,
+                BackgroundTransparency = 0.65,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 15, 0, 1),
+                Size = UDim2.new(0.55, 0, 0, 1),
+                ZIndex = (zindex or 1) + 2
+            })
+        
+        Gradient(highlight, Chrome, 0)
+    end
 
     Gradient(highlight, ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 46, 52)),
